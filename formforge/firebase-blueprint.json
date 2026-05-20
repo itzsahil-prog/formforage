@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "name"]
+    },
+    "Form": {
+      "title": "Form",
+      "description": "A form created by a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "color": { "type": "string" },
+            "backgroundColor": { "type": "string" },
+            "fontFamily": { "type": "string" },
+            "bannerImage": { "type": "string" }
+          }
+        },
+        "questions": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "JSON array of question structure"
+        }
+      },
+      "required": ["userId", "title", "createdAt", "questions"]
+    },
+    "Response": {
+      "title": "Response",
+      "description": "A response submitted for a form",
+      "type": "object",
+      "properties": {
+        "formId": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "answers": {
+          "type": "object",
+          "description": "Map of questionId to answer"
+        }
+      },
+      "required": ["formId", "submittedAt", "answers"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles. Protected."
+    },
+    "forms/{formId}": {
+      "schema": { "$ref": "#/entities/Form" },
+      "description": "Forms."
+    },
+    "forms/{formId}/responses/{responseId}": {
+      "schema": { "$ref": "#/entities/Response" },
+      "description": "Sub-collection of responses."
+    }
+  }
+}

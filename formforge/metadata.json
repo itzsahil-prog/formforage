@@ -1,0 +1,6 @@
+{
+  "name": "FormForge",
+  "description": "FormForge — a powerful personal form builder platform by VeloxCodeAgency, with enhanced AI features.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,71 @@
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String?
+  name          String?
+  role          Role      @default(USER)
+  forms         Form[]
+  teamId        String?
+  team          Team?     @relation(fields: [teamId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  subscription  Subscription?
+}
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  members   User[]
+  createdAt DateTime @default(now())
+}
+
+model Form {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  themeColor  String     @default("zinc")
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  questions   Question[]
+  responses   Response[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  published   Boolean    @default(false)
+}
+
+model Question {
+  id          String   @id @default(uuid())
+  formId      String
+  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  type        String   // short_text, long_text, email, dropdown, etc.
+  title       String
+  description String?
+  required    Boolean  @default(false)
+  options     Json?    // For dropdowns, multiple choice
+  orderIndex  Int      @default(0)
+}
+
+model Response {
+  id          String   @id @default(uuid())
+  formId      String
+  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers     Json     // key-value pair of questionId to answer
+  submittedAt DateTime @default(now())
+  respondentId String? // If authenticated user responded
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  plan      String   // free, pro, team, enterprise
+  status    String   // active, canceled
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+  TEAM_MEMBER
+}

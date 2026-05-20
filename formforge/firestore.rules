@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() { return request.auth != null; }
+    function existing() { return resource.data; }
+    function incoming() { return request.resource.data; }
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // Users Collection
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'name', 'createdAt']) && 
+             data.email is string && data.email.size() <= 128 &&
+             data.name is string && data.name.size() <= 128 &&
+             data.createdAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                       isValidUser(incoming()) && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name']) &&
+                       isValidUser(incoming()) && incoming().createdAt == existing().createdAt;
+    }
+
+    // Forms Collection
+    function isValidFormCreate(data) {
+      return data.keys().hasAll(['userId', 'title', 'createdAt', 'questions']) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 128 &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidFormUpdate(data) {
+      return data.title is string && data.title.size() <= 128;
+    }
+
+    match /forms/{formId} {
+      allow get: if true; // Public read for form viewing
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() && isValidId(formId) &&
+                       isValidFormCreate(incoming()) && incoming().createdAt == request.time;
+      
+      allow update: if isSignedIn() && existing().userId == request.auth.uid &&
+                       isValidId(formId) &&
+                       incoming().userId == existing().userId &&
+                       isValidFormUpdate(incoming()) &&
+                       incoming().createdAt == existing().createdAt;
+                       
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+
+      // Responses Collection
+      match /responses/{responseId} {
+        allow create: if isValidId(formId) && isValidId(responseId) && 
+                         incoming().formId == formId &&
+                         incoming().submittedAt == request.time;
+                         // anyone can submit a response
+
+        allow list, get: if isSignedIn() && 
+                         get(/databases/$(database)/documents/forms/$(formId)).data.userId == request.auth.uid;
+      }
+    }
+  }
+}
